@@ -1,26 +1,30 @@
-name: Gartic RDP (User: 1234)
+name: Gartic RDP (Fast & Pre-installed Firefox)
 
 on:
   workflow_dispatch:
 
 jobs:
-  gartic-desktop:
+  gartic-bot:
     runs-on: windows-latest
     timeout-minutes: 360  # 6 ساعات
 
     steps:
-      - name: 1. Configure RDP & Network
+      - name: 1. Configure RDP Network
         run: |
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0 -Force
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 0 -Force
           netsh advfirewall firewall add rule name="Allow-RDP" dir=in action=allow protocol=TCP localport=3389
 
-      - name: 2. Configure Firefox Extensions
+      - name: 2. Configure Extensions (No Install Needed)
         run: |
+          # بما إن فيرفوكس موجود، هنخش علطول نعمل فولدر السياسات
           $firefoxDir = "C:\Program Files\Mozilla Firefox"
           $distDir = "$firefoxDir\distribution"
+          
+          # تأكيد وجود الفولدر (لو مش موجود بنعمله)
           if (!(Test-Path $distDir)) { New-Item -ItemType Directory -Force -Path $distDir }
 
+          # روابط الإضافات
           $extensions = @(
               "https://addons.mozilla.org/firefox/downloads/latest/ublock-origin/latest.xpi",
               "https://addons.mozilla.org/firefox/downloads/latest/auto-refresh-page/latest.xpi",
@@ -28,23 +32,28 @@ jobs:
               "https://addons.mozilla.org/firefox/downloads/latest/tampermonkey/latest.xpi"
           )
 
+          # ملف الإعدادات لإجبار المتصفح على قبول الإضافات
           $policies = @{
               policies = @{
                   Extensions = @{ Install = $extensions }
                   DisableAppUpdate = $true
                   DontCheckDefaultBrowser = $true
+                  Homepage = @{
+                      URL = "https://gartic.io"
+                      StartPage = "homepage"
+                  }
               }
           }
           $policies | ConvertTo-Json -Depth 4 | Out-File "$distDir\policies.json" -Encoding UTF8
 
-      - name: 3. Create Script on Desktop
+      - name: 3. Create Script File (With 1 Min Auto-Refresh)
         run: |
-          $ScriptContent = @'
+          $ScriptContent = @"
           // ==UserScript==
-          // @name         Gartic.io Token Fetcher (Optimized Reload Version )
+          // @name         Gartic.io Token Fetcher (1 Min Reload)
           // @namespace    http://tampermonkey.net/
-          // @version      0.5
-          // @description  Fetch maximum tokens from Turnstile with minimal data usage + auto reload every 50s
+          // @version      0.6
+          // @description  Fetch tokens + auto reload every 60s
           // @author       You
           // @match        *://gartic.io/*
           // @match        *://*.gartic.io/*
@@ -53,18 +62,15 @@ jobs:
 
           (function () {
               'use strict';
-
               const TOKEN_INTERVAL = 4000;
               const NUM_IFRAMES = 5;
               const BACKEND_URL = 'https://moonfive.alwaysdata.net/add-token';
 
-              setInterval(() => {
-                  location.reload();
-              }, 50000);
+              // ريفريش كل دقيقة (60000 مللي ثانية)
+              setInterval(() => { location.reload(); }, 60000);
 
               function sendToken(token) {
                   if (typeof token !== 'string' || token.length <= 20) return;
-                  console.log("Token received:", token);
                   fetch(BACKEND_URL, {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
@@ -84,75 +90,37 @@ jobs:
                       iframe.style.display = 'none';
                       iframe.sandbox = 'allow-scripts allow-same-origin';
                       document.body.appendChild(iframe);
-
-                      const html = `
-                          <!DOCTYPE html>
-                          <html>
-                          <head>
-                              <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
-                          </head>
-                          <body>
-                              <div id="cf-turnstile"></div>
-                              <script>
-                                  function requestToken() {
-                                      try {
-                                          window.turnstile.render('#cf-turnstile', {
-                                              sitekey: '0x4AAAAAABBPKaIbNwnPEfSo',
-                                              callback: function(token) {
-                                                  parent.postMessage(token, '*');
-                                              }
-                                          });
-                                      } catch (e) {}
-                                  }
-                                  setInterval(requestToken, ${TOKEN_INTERVAL});
-                                  setTimeout(requestToken, 200);
-                              </script>
-                          </body>
-                          </html>
-                      `;
+                      
+                      const html = '<!DOCTYPE html><html><head><script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer><\/script></head><body><div id="cf-turnstile"></div><script>function requestToken(){try{window.turnstile.render("#cf-turnstile",{sitekey:"0x4AAAAAABBPKaIbNwnPEfSo",callback:function(token){parent.postMessage(token,"*");}});}catch(e){}}setInterval(requestToken,' + TOKEN_INTERVAL + ');setTimeout(requestToken,200);<\/script></body></html>';
+                      
                       iframe.srcdoc = html;
                   }
               }
-
               createTurnstileFrames();
-
           })();
-          '@
+          "@
           
-          $desktopPath = "C:\Users\Public\Desktop\Gartic_Script.user.js"
-          $ScriptContent | Out-File $desktopPath -Encoding UTF8
           $ScriptContent | Out-File "C:\gartic.user.js" -Encoding UTF8
 
-      - name: 4. Create User (User: 1234 | Pass: yosef)
+      - name: 4. Create RDP User
         run: |
-          $password = "yosef"
+          $password = "Start@123456"
           $securePass = ConvertTo-SecureString $password -AsPlainText -Force
-          New-LocalUser -Name "1234" -Password $securePass -AccountNeverExpires -ErrorAction SilentlyContinue
-          Add-LocalGroupMember -Group "Administrators" -Member "1234"
-          Add-LocalGroupMember -Group "Remote Desktop Users" -Member "1234"
+          New-LocalUser -Name "RDP" -Password $securePass -AccountNeverExpires -ErrorAction SilentlyContinue
+          Add-LocalGroupMember -Group "Administrators" -Member "RDP"
+          Add-LocalGroupMember -Group "Remote Desktop Users" -Member "RDP"
+          echo "RDP_CREDS=User: RDP | Password: $password" >> $env:GITHUB_ENV
 
-      - name: 5. Start Tailscale (Ephemeral Mode)
+      - name: 5. Start Tailscale
         run: |
           $tsUrl = "https://pkgs.tailscale.com/stable/tailscale-setup-latest.exe"
           Invoke-WebRequest -Uri $tsUrl -OutFile "$env:TEMP\tailscale.exe"
           Start-Process "$env:TEMP\tailscale.exe" -ArgumentList "/quiet", "/norestart" -Wait
-          
-          # ضفتلك --ephemeral عشان الجهاز يتمسح لما تخلص وتعرف تستخدم نفس الاسم تاني
-          & "C:\Program Files\Tailscale\tailscale.exe" up --authkey=${{ secrets.TAILSCALE_AUTH_KEY }} --hostname=gartic-1234 --ephemeral
+          & "C:\Program Files\Tailscale\tailscale.exe" up --authkey=${{ secrets.TAILSCALE_AUTH_KEY }} --hostname=gartic-fast
 
-      - name: 6. SHOW IP & Launch Firefox
+      - name: 6. Launch Firefox
         run: |
-          $ip = & "C:\Program Files\Tailscale\tailscale.exe" ip -4
-          
-          echo "::notice title=RDP LOGIN::IP: $ip | User: 1234 | Pass: yosef"
-          
-          Write-Host "=========================================="
-          Write-Host "     TRY CONNECTING WITH NAME: gartic-1234"
-          Write-Host "     OR USE IP: $ip"
-          Write-Host "     USERNAME:  1234"
-          Write-Host "     PASSWORD:  yosef"
-          Write-Host "=========================================="
-
+          # بنشغل المتصفح الموجود أصلاً مع ملف السكربت
           Start-Process "C:\Program Files\Mozilla Firefox\firefox.exe" -ArgumentList "C:\gartic.user.js"
-          
+          Write-Host "RDP Ready! No install needed."
           while ($true) { Start-Sleep -Seconds 300 }

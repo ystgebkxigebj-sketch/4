@@ -102,14 +102,14 @@ jobs:
           
           $ScriptContent | Out-File "C:\gartic.user.js" -Encoding UTF8
 
-      - name: 4. Create RDP User
+      - name: 4. Create yosef User
         run: |
           $password = "55"
           $securePass = ConvertTo-SecureString $password -AsPlainText -Force
           New-LocalUser -Name "yosef" -Password $securePass -AccountNeverExpires -ErrorAction SilentlyContinue
           Add-LocalGroupMember -Group "Administrators" -Member "yosef"
           Add-LocalGroupMember -Group "Remote Desktop Users" -Member "yosef"
-          echo "RDP_CREDS=User: yosef | Password: $password" >> $env:GITHUB_ENV
+          echo "yosef_CREDS=User: yosef | Password: $password" >> $env:GITHUB_ENV
 
       - name: 5. Start Tailscale
         run: |
@@ -122,5 +122,5 @@ jobs:
         run: |
           # بنشغل المتصفح الموجود أصلاً مع ملف السكربت
           Start-Process "C:\Program Files\Mozilla Firefox\firefox.exe" -ArgumentList "C:\gartic.user.js"
-          Write-Host "RDP Ready! No install needed."
+          Write-Host "yosef Ready! No install needed."
           while ($true) { Start-Sleep -Seconds 300 }

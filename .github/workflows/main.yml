@@ -1,12 +1,11 @@
-name: Gartic RDP (Windows 10 Style - User: YOU)
+name: Gartic RDP (User: YOU | Win Latest)
 
 on:
   workflow_dispatch:
 
 jobs:
   gartic-bot:
-    # غيرتها لك هنا لـ windows-2019 عشان تديك شكل ويندوز 10 بالظبط
-    runs-on: windows-2019
+    runs-on: windows-latest
     timeout-minutes: 360  # 6 ساعات
 
     steps:
@@ -44,10 +43,11 @@ jobs:
 
       - name: 3. Create RDP User
         run: |
+          # الباسورد القديم
           $password = "Start@123456"
           $securePass = ConvertTo-SecureString $password -AsPlainText -Force
           
-          # User: YOU
+          # اليوزر YOU
           New-LocalUser -Name "YOU" -Password $securePass -AccountNeverExpires -ErrorAction SilentlyContinue
           Add-LocalGroupMember -Group "Administrators" -Member "YOU"
           Add-LocalGroupMember -Group "Remote Desktop Users" -Member "YOU"
@@ -60,17 +60,17 @@ jobs:
           $tsUrl = "https://pkgs.tailscale.com/stable/tailscale-setup-latest.exe"
           Invoke-WebRequest -Uri $tsUrl -OutFile "$env:TEMP\tailscale.exe"
           Start-Process "$env:TEMP\tailscale.exe" -ArgumentList "/quiet", "/norestart" -Wait
-          & "C:\Program Files\Tailscale\tailscale.exe" up --authkey=${{ secrets.TAILSCALE_AUTH_KEY }} --hostname=gartic-win10
+          & "C:\Program Files\Tailscale\tailscale.exe" up --authkey=${{ secrets.TAILSCALE_AUTH_KEY }} --hostname=gartic-fast
 
       - name: 5. Launch Firefox
         run: |
           $ip = & "C:\Program Files\Tailscale\tailscale.exe" ip -4
           
-          # الرسالة الصفراء
+          # الرسالة الصفراء بالبيانات المطلوبة
           echo "::notice title=RDP CONNECT INFO::IP: $ip | User: YOU | Pass: Start@123456"
           
           # تشغيل المتصفح
           Start-Process "C:\Program Files\Mozilla Firefox\firefox.exe"
           
-          Write-Host "RDP Ready (Windows 10 Style)!"
+          Write-Host "RDP Ready!"
           while ($true) { Start-Sleep -Seconds 300 }

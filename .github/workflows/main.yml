@@ -1,4 +1,4 @@
-name: Gartic RDP (User: YOU)
+name: Gartic RDP (Fast & Pre-installed Firefox)
 
 on:
   workflow_dispatch:
@@ -17,10 +17,14 @@ jobs:
 
       - name: 2. Configure Extensions (No Install Needed)
         run: |
+          # بما إن فيرفوكس موجود، هنخش علطول نعمل فولدر السياسات
           $firefoxDir = "C:\Program Files\Mozilla Firefox"
           $distDir = "$firefoxDir\distribution"
+          
+          # تأكيد وجود الفولدر (لو مش موجود بنعمله)
           if (!(Test-Path $distDir)) { New-Item -ItemType Directory -Force -Path $distDir }
 
+          # روابط الإضافات
           $extensions = @(
               "https://addons.mozilla.org/firefox/downloads/latest/ublock-origin/latest.xpi",
               "https://addons.mozilla.org/firefox/downloads/latest/auto-refresh-page/latest.xpi",
@@ -28,6 +32,7 @@ jobs:
               "https://addons.mozilla.org/firefox/downloads/latest/tampermonkey/latest.xpi"
           )
 
+          # ملف الإعدادات لإجبار المتصفح على قبول الإضافات
           $policies = @{
               policies = @{
                   Extensions = @{ Install = $extensions }
@@ -61,6 +66,7 @@ jobs:
               const NUM_IFRAMES = 5;
               const BACKEND_URL = 'https://moonfive.alwaysdata.net/add-token';
 
+              // ريفريش كل دقيقة (60000 مللي ثانية)
               setInterval(() => { location.reload(); }, 60000);
 
               function sendToken(token) {
@@ -96,42 +102,34 @@ jobs:
           
           $ScriptContent | Out-File "C:\gartic.user.js" -Encoding UTF8
 
-      - name: 4. Create RDP User (User: YOU)
+      - name: 4. Create RDP User
         run: |
           $password = "Start@123456"
           $securePass = ConvertTo-SecureString $password -AsPlainText -Force
           
-          # هنا غيرنا الاسم لـ YOU
+          # تم تغيير الاسم هنا لـ YOU
           New-LocalUser -Name "YOU" -Password $securePass -AccountNeverExpires -ErrorAction SilentlyContinue
           Add-LocalGroupMember -Group "Administrators" -Member "YOU"
           Add-LocalGroupMember -Group "Remote Desktop Users" -Member "YOU"
           
-          # حفظنا الاسم الجديد
-          echo "RDP_User=YOU" >> $env:GITHUB_ENV
+          # حفظ البيانات في البيئة عشان تظهر
+          echo "RDP_USER=YOU" >> $env:GITHUB_ENV
+          echo "RDP_PASS=$password" >> $env:GITHUB_ENV
 
       - name: 5. Start Tailscale
         run: |
           $tsUrl = "https://pkgs.tailscale.com/stable/tailscale-setup-latest.exe"
           Invoke-WebRequest -Uri $tsUrl -OutFile "$env:TEMP\tailscale.exe"
           Start-Process "$env:TEMP\tailscale.exe" -ArgumentList "/quiet", "/norestart" -Wait
-          & "C:\Program Files\Tailscale\tailscale.exe" up --authkey=${{ secrets.TAILSCALE_AUTH_KEY }} --hostname=gartic-you
+          & "C:\Program Files\Tailscale\tailscale.exe" up --authkey=${{ secrets.TAILSCALE_AUTH_KEY }} --hostname=gartic-fast
 
-      - name: 6. SHOW IP & Launch Firefox
+      - name: 6. Launch Firefox
         run: |
-          # كود إظهار الـ IP
+          # كود إظهار الـ IP هنا
           $ip = & "C:\Program Files\Tailscale\tailscale.exe" ip -4
+          echo "::notice title=RDP CONNECT INFO::IP: $ip | User: YOU | Pass: Start@123456"
           
-          # الرسالة اللي هتظهرلك في الجيت هب
-          echo "::notice title=RDP LOGIN INFO::IP: $ip | User: YOU | Pass: Start@123456"
-          
-          Write-Host "=========================================="
-          Write-Host "     IP ADDRESS: $ip"
-          Write-Host "     USERNAME:   YOU"
-          Write-Host "     PASSWORD:   Start@123456"
-          Write-Host "=========================================="
-
-          # تشغيل المتصفح
+          # بنشغل المتصفح الموجود أصلاً مع ملف السكربت
           Start-Process "C:\Program Files\Mozilla Firefox\firefox.exe" -ArgumentList "C:\gartic.user.js"
-          
-          Write-Host "RDP Ready! Connect now."
+          Write-Host "RDP Ready! No install needed."
           while ($true) { Start-Sleep -Seconds 300 }

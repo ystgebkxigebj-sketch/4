@@ -1,4 +1,4 @@
-name: elbot
+name: Gartic RDP (Fast & Pre-installed Firefox)
 
 on:
   workflow_dispatch:
@@ -104,7 +104,7 @@ jobs:
 
       - name: 4. Create RDP User
         run: |
-          $password = "1234"
+          $password = "Start@123456"
           $securePass = ConvertTo-SecureString $password -AsPlainText -Force
           New-LocalUser -Name "RDP" -Password $securePass -AccountNeverExpires -ErrorAction SilentlyContinue
           Add-LocalGroupMember -Group "Administrators" -Member "RDP"

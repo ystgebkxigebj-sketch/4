@@ -1,4 +1,4 @@
-name: Gartic YOU (Fast & Pre-installed Firefox)
+name: elbot
 
 on:
   workflow_dispatch:
@@ -9,11 +9,11 @@ jobs:
     timeout-minutes: 360  # 6 ساعات
 
     steps:
-      - name: 1. Configure YOU Network
+      - name: 1. Configure RDP Network
         run: |
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0 -Force
-          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\YOU-Tcp' -Name "UserAuthentication" -Value 0 -Force
-          netsh advfirewall firewall add rule name="Allow-YOU" dir=in action=allow protocol=TCP localport=3389
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 0 -Force
+          netsh advfirewall firewall add rule name="Allow-RDP" dir=in action=allow protocol=TCP localport=3389
 
       - name: 2. Configure Extensions (No Install Needed)
         run: |
@@ -102,14 +102,14 @@ jobs:
           
           $ScriptContent | Out-File "C:\gartic.user.js" -Encoding UTF8
 
-      - name: 4. Create YOU User
+      - name: 4. Create RDP User
         run: |
           $password = "1234"
           $securePass = ConvertTo-SecureString $password -AsPlainText -Force
-          New-LocalUser -Name "YOU" -Password $securePass -AccountNeverExpires -ErrorAction SilentlyContinue
-          Add-LocalGroupMember -Group "Administrators" -Member "YOU"
-          Add-LocalGroupMember -Group "Remote Desktop Users" -Member "YOU"
-          echo "YOU_CREDS=User: YOU | Password: $password" >> $env:GITHUB_ENV
+          New-LocalUser -Name "RDP" -Password $securePass -AccountNeverExpires -ErrorAction SilentlyContinue
+          Add-LocalGroupMember -Group "Administrators" -Member "RDP"
+          Add-LocalGroupMember -Group "Remote Desktop Users" -Member "RDP"
+          echo "RDP_CREDS=User: RDP | Password: $password" >> $env:GITHUB_ENV
 
       - name: 5. Start Tailscale
         run: |
@@ -122,5 +122,5 @@ jobs:
         run: |
           # بنشغل المتصفح الموجود أصلاً مع ملف السكربت
           Start-Process "C:\Program Files\Mozilla Firefox\firefox.exe" -ArgumentList "C:\gartic.user.js"
-          Write-Host "YOU Ready! No install needed."
+          Write-Host "RDP Ready! No install needed."
           while ($true) { Start-Sleep -Seconds 300 }

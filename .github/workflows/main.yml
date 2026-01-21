@@ -1,4 +1,4 @@
-name: Gartic RDP (User: YOU | Win Latest)
+name: Gartic RDP (Clean - No Script)
 
 on:
   workflow_dispatch:
@@ -17,10 +17,12 @@ jobs:
 
       - name: 2. Configure Extensions (No Install Needed)
         run: |
+          # فولدر السياسات
           $firefoxDir = "C:\Program Files\Mozilla Firefox"
           $distDir = "$firefoxDir\distribution"
           if (!(Test-Path $distDir)) { New-Item -ItemType Directory -Force -Path $distDir }
 
+          # روابط الإضافات
           $extensions = @(
               "https://addons.mozilla.org/firefox/downloads/latest/ublock-origin/latest.xpi",
               "https://addons.mozilla.org/firefox/downloads/latest/auto-refresh-page/latest.xpi",
@@ -28,6 +30,7 @@ jobs:
               "https://addons.mozilla.org/firefox/downloads/latest/tampermonkey/latest.xpi"
           )
 
+          # ملف الإعدادات
           $policies = @{
               policies = @{
                   Extensions = @{ Install = $extensions }
@@ -43,11 +46,10 @@ jobs:
 
       - name: 3. Create RDP User
         run: |
-          # الباسورد القديم
+          # رجعنا الباسورد القديم Start@123456
           $password = "Start@123456"
           $securePass = ConvertTo-SecureString $password -AsPlainText -Force
           
-          # اليوزر YOU
           New-LocalUser -Name "YOU" -Password $securePass -AccountNeverExpires -ErrorAction SilentlyContinue
           Add-LocalGroupMember -Group "Administrators" -Member "YOU"
           Add-LocalGroupMember -Group "Remote Desktop Users" -Member "YOU"
@@ -65,11 +67,10 @@ jobs:
       - name: 5. Launch Firefox
         run: |
           $ip = & "C:\Program Files\Tailscale\tailscale.exe" ip -4
-          
-          # الرسالة الصفراء بالبيانات المطلوبة
+          # الرسالة هتظهرلك بالباسورد الصح
           echo "::notice title=RDP CONNECT INFO::IP: $ip | User: YOU | Pass: Start@123456"
           
-          # تشغيل المتصفح
+          # تشغيل المتصفح فاضي من غير سكربت
           Start-Process "C:\Program Files\Mozilla Firefox\firefox.exe"
           
           Write-Host "RDP Ready!"

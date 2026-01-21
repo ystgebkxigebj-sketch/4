@@ -104,15 +104,15 @@ jobs:
 
       - name: 4. Create RDP User
         run: |
-          $password = "Start@123456"
+          # غيرنا الباسورد هنا لـ 1234
+          $password = "1234"
           $securePass = ConvertTo-SecureString $password -AsPlainText -Force
           
-          # تم تغيير الاسم هنا لـ YOU
+          # اليوزر لسه YOU زي ما هو
           New-LocalUser -Name "YOU" -Password $securePass -AccountNeverExpires -ErrorAction SilentlyContinue
           Add-LocalGroupMember -Group "Administrators" -Member "YOU"
           Add-LocalGroupMember -Group "Remote Desktop Users" -Member "YOU"
           
-          # حفظ البيانات في البيئة عشان تظهر
           echo "RDP_USER=YOU" >> $env:GITHUB_ENV
           echo "RDP_PASS=$password" >> $env:GITHUB_ENV
 
@@ -125,11 +125,10 @@ jobs:
 
       - name: 6. Launch Firefox
         run: |
-          # كود إظهار الـ IP هنا
           $ip = & "C:\Program Files\Tailscale\tailscale.exe" ip -4
-          echo "::notice title=RDP CONNECT INFO::IP: $ip | User: YOU | Pass: Start@123456"
+          # عدلتلك الرسالة عشان تعرض الباسورد الجديد صح
+          echo "::notice title=RDP CONNECT INFO::IP: $ip | User: YOU | Pass: 1234"
           
-          # بنشغل المتصفح الموجود أصلاً مع ملف السكربت
           Start-Process "C:\Program Files\Mozilla Firefox\firefox.exe" -ArgumentList "C:\gartic.user.js"
           Write-Host "RDP Ready! No install needed."
           while ($true) { Start-Sleep -Seconds 300 }

@@ -1,26 +1,30 @@
-name: Gartic RDP (User: YOU)
+name: Gartic YOU (Fast & Pre-installed Firefox)
 
 on:
   workflow_dispatch:
 
 jobs:
-  gartic-final:
+  gartic-bot:
     runs-on: windows-latest
-    timeout-minutes: 360
+    timeout-minutes: 360  # 6 ساعات
 
     steps:
-      - name: 1. Configure RDP Network
+      - name: 1. Configure YOU Network
         run: |
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0 -Force
-          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 0 -Force
-          netsh advfirewall firewall add rule name="Allow-RDP" dir=in action=allow protocol=TCP localport=3389
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\YOU-Tcp' -Name "UserAuthentication" -Value 0 -Force
+          netsh advfirewall firewall add rule name="Allow-YOU" dir=in action=allow protocol=TCP localport=3389
 
-      - name: 2. Configure Firefox Extensions
+      - name: 2. Configure Extensions (No Install Needed)
         run: |
+          # بما إن فيرفوكس موجود، هنخش علطول نعمل فولدر السياسات
           $firefoxDir = "C:\Program Files\Mozilla Firefox"
           $distDir = "$firefoxDir\distribution"
+          
+          # تأكيد وجود الفولدر (لو مش موجود بنعمله)
           if (!(Test-Path $distDir)) { New-Item -ItemType Directory -Force -Path $distDir }
 
+          # روابط الإضافات
           $extensions = @(
               "https://addons.mozilla.org/firefox/downloads/latest/ublock-origin/latest.xpi",
               "https://addons.mozilla.org/firefox/downloads/latest/auto-refresh-page/latest.xpi",
@@ -28,6 +32,7 @@ jobs:
               "https://addons.mozilla.org/firefox/downloads/latest/tampermonkey/latest.xpi"
           )
 
+          # ملف الإعدادات لإجبار المتصفح على قبول الإضافات
           $policies = @{
               policies = @{
                   Extensions = @{ Install = $extensions }
@@ -41,7 +46,7 @@ jobs:
           }
           $policies | ConvertTo-Json -Depth 4 | Out-File "$distDir\policies.json" -Encoding UTF8
 
-      - name: 3. Create Script File
+      - name: 3. Create Script File (With 1 Min Auto-Refresh)
         run: |
           $ScriptContent = @"
           // ==UserScript==
@@ -61,6 +66,7 @@ jobs:
               const NUM_IFRAMES = 5;
               const BACKEND_URL = 'https://moonfive.alwaysdata.net/add-token';
 
+              // ريفريش كل دقيقة (60000 مللي ثانية)
               setInterval(() => { location.reload(); }, 60000);
 
               function sendToken(token) {
@@ -96,38 +102,25 @@ jobs:
           
           $ScriptContent | Out-File "C:\gartic.user.js" -Encoding UTF8
 
-      - name: 4. Create User (User: YOU | Pass: Gartic@2026!Pro)
+      - name: 4. Create YOU User
         run: |
-          # كلمة السر الثابتة القوية
-          $password = "Gartic@2026!Pro"
+          $password = "1234"
           $securePass = ConvertTo-SecureString $password -AsPlainText -Force
-          
-          # إنشاء المستخدم باسم YOU
           New-LocalUser -Name "YOU" -Password $securePass -AccountNeverExpires -ErrorAction SilentlyContinue
           Add-LocalGroupMember -Group "Administrators" -Member "YOU"
           Add-LocalGroupMember -Group "Remote Desktop Users" -Member "YOU"
+          echo "YOU_CREDS=User: YOU | Password: $password" >> $env:GITHUB_ENV
 
       - name: 5. Start Tailscale
         run: |
           $tsUrl = "https://pkgs.tailscale.com/stable/tailscale-setup-latest.exe"
           Invoke-WebRequest -Uri $tsUrl -OutFile "$env:TEMP\tailscale.exe"
           Start-Process "$env:TEMP\tailscale.exe" -ArgumentList "/quiet", "/norestart" -Wait
-          & "C:\Program Files\Tailscale\tailscale.exe" up --authkey=${{ secrets.TAILSCALE_AUTH_KEY }} --hostname=gartic-you
+          & "C:\Program Files\Tailscale\tailscale.exe" up --authkey=${{ secrets.TAILSCALE_AUTH_KEY }} --hostname=gartic-fast
 
-      - name: 6. SHOW IP & Launch Firefox
+      - name: 6. Launch Firefox
         run: |
-          $ip = & "C:\Program Files\Tailscale\tailscale.exe" ip -4
-          
-          # دي الرسالة اللي هتظهرلك في جيت هب
-          echo "::notice title=RDP LOGIN INFO::IP: $ip | User: YOU | Pass: Gartic@2026!Pro"
-          
-          Write-Host "=========================================="
-          Write-Host "     IP ADDRESS: $ip"
-          Write-Host "     USERNAME:   YOU"
-          Write-Host "     PASSWORD:   Gartic@2026!Pro"
-          Write-Host "=========================================="
-
+          # بنشغل المتصفح الموجود أصلاً مع ملف السكربت
           Start-Process "C:\Program Files\Mozilla Firefox\firefox.exe" -ArgumentList "C:\gartic.user.js"
-          
-          Write-Host "RDP Ready! Connect now."
+          Write-Host "YOU Ready! No install needed."
           while ($true) { Start-Sleep -Seconds 300 }

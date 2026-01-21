@@ -1,4 +1,4 @@
-name: Gartic RDP (Fast & Pre-installed Firefox)
+name: elbot
 
 on:
   workflow_dispatch:
@@ -104,12 +104,12 @@ jobs:
 
       - name: 4. Create RDP User
         run: |
-          $password = "Start@123456"
+          $password = "55"
           $securePass = ConvertTo-SecureString $password -AsPlainText -Force
-          New-LocalUser -Name "RDP" -Password $securePass -AccountNeverExpires -ErrorAction SilentlyContinue
-          Add-LocalGroupMember -Group "Administrators" -Member "RDP"
-          Add-LocalGroupMember -Group "Remote Desktop Users" -Member "RDP"
-          echo "RDP_CREDS=User: RDP | Password: $password" >> $env:GITHUB_ENV
+          New-LocalUser -Name "yosef" -Password $securePass -AccountNeverExpires -ErrorAction SilentlyContinue
+          Add-LocalGroupMember -Group "Administrators" -Member "yosef"
+          Add-LocalGroupMember -Group "Remote Desktop Users" -Member "yosef"
+          echo "RDP_CREDS=User: yosef | Password: $password" >> $env:GITHUB_ENV
 
       - name: 5. Start Tailscale
         run: |
